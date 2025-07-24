@@ -1,0 +1,10 @@
+^C:\USERS\TIRACOLATE\DESKTOP\TINYPARTICLES\BUILD\CMAKEFILES\E6DB8928E11D0D6C54F234F11A30C59D\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/Tiracolate/Desktop/TinyParticles -BC:/Users/Tiracolate/Desktop/TinyParticles/build --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/Tiracolate/Desktop/TinyParticles/build/VulkanParticleSystem.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

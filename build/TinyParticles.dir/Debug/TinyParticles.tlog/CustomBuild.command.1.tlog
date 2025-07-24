@@ -1,0 +1,10 @@
+^C:\USERS\TIRACOLATE\DESKTOP\TINYPARTICLES\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/Tiracolate/Desktop/TinyParticles -BC:/Users/Tiracolate/Desktop/TinyParticles/build --check-stamp-file C:/Users/Tiracolate/Desktop/TinyParticles/build/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
