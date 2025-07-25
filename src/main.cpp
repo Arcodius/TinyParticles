@@ -5,6 +5,7 @@
 
 #include <cstring>
 #include <iostream>
+#include <optional>
 #include <vector>
 #include <string>
 
@@ -36,6 +37,39 @@ void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT
     }
 }
 
+// each queue family contains a certain set of ops suitable for only this device
+struct QueueFamilyIndices {
+    std::optional<uint32_t> graphicsFamily; // use optional to introduce 'non-existing' numbers, cuz any number could be an indice
+
+    bool isComplete() {
+        return graphicsFamily.has_value();
+    }
+};
+
+QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device) {
+    QueueFamilyIndices indices;
+
+    // C style query, avoid allocating memory dynamically
+    uint32_t queueFamilyCount = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
+
+    std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
+
+    int i = 0;
+    for (const auto& queueFamily : queueFamilies) {
+        if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+            indices.graphicsFamily = i;
+        }
+        if (indices.isComplete()) { // early exit once found
+            break;
+        }
+        i++;
+    }
+
+    return indices;
+}
+
 class HelloVulkan{
 
 private:
@@ -43,6 +77,8 @@ private:
     VkInstance instance;
     VkDebugUtilsMessengerEXT debugMessenger;
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+    VkDevice device; // logical device
+    VkQueue graphicsQueue;
     
 public:
     void run() {
@@ -64,6 +100,7 @@ private:
         createInstance();
         setupDebugMessenger();
         pickPhysicalDevice();
+        createLogicalDevice();
     }
 
     void populateDebugMessengerCerateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) {
@@ -197,9 +234,54 @@ private:
             throw std::runtime_error("failed to find a suitable GPU!");
         }
     }
+
+    // Can also be replaced by rateDeviceSuitability
     bool isDeviceSuitable(VkPhysicalDevice device) {
-        return true;
-        // Base device suitability checks
+        // VkPhysicalDeviceProperties deviceProperties;
+        // vkGetPhysicalDeviceProperties(device, &deviceProperties);
+        // VkPhysicalDeviceFeatures deviceFeatures;
+        // vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+
+        // return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && deviceFeatures.geometryShader;
+        
+        QueueFamilyIndices indices = findQueueFamilies(device);
+        return indices.isComplete();
+    }
+
+    void createLogicalDevice() {
+        QueueFamilyIndices indices = findQueueFamilies(physicalDevice);
+
+        VkDeviceQueueCreateInfo queueCreateInfo{};
+        queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queueCreateInfo.queueFamilyIndex = indices.graphicsFamily.value();
+        queueCreateInfo.queueCount = 1;
+        float queuePriority = 1.0f;
+        queueCreateInfo.pQueuePriorities = &queuePriority;
+
+        VkPhysicalDeviceFeatures deviceFeatures{};
+
+        VkDeviceCreateInfo createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+        createInfo.pQueueCreateInfos = &queueCreateInfo;
+        createInfo.queueCreateInfoCount = 1;
+        createInfo.pEnabledFeatures = &deviceFeatures;
+
+        createInfo.enabledExtensionCount = 0;
+        if (enableValidationLayers) {
+            // no need to distinguish instance and device specific validation layers, because they would be ignored by up-to-date implementations
+            createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+            createInfo.ppEnabledLayerNames = validationLayers.data();
+        } else {
+            createInfo.enabledLayerCount = 0;
+        }
+        
+        // queues are created simultaneously
+        if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create logical device!");
+        }
+
+        // get queue handle
+        vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
     }
 
     void mainLoop() {
@@ -209,6 +291,7 @@ private:
     }
 
     void cleanup() {
+        vkDestroyDevice(device, nullptr);
         if (enableValidationLayers){
             DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
         }
