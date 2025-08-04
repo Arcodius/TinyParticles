@@ -4,8 +4,10 @@ project(VulkanParticleSystem VERSION 1.0)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(GLFW_INCLUDE_DIR "C:/Users/Tiracolate/libraries/GLFW/include")
-set(GLFW_LIBRARY "C:/Users/Tiracolate/libraries/GLFW/lib/glfw3.lib")
+# set(GLFW_INCLUDE_DIR "C:/Users/Tiracolate/libraries/GLFW/include")
+# set(GLFW_LIBRARY "C:/Users/Tiracolate/libraries/GLFW/lib/glfw3.lib")
+set(GLFW_INCLUDE_DIR "C:/Users/Tiracolate/library/glfw-3.4/include")
+set(GLFW_LIBRARY "C:/Users/Tiracolate/library/glfw-3.4/build/src/Debug/glfw3.lib")
 
 find_package(Vulkan REQUIRED)
 
